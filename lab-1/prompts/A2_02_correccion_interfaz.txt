@@ -1,0 +1,5 @@
+verdad, había capturado la interfaz wifi wlp2s0 en vez del loopback, no uses esa captura
+
+ahora te adjunto una captura nueva hecha directamente en lo mientras ejecuté ping -c 3 127.0.0.1
+
+vuelve a analizar solamente estos paquetes confirma primero que el origen y destino son 127.0.0.1 y que aparecen los tres echo request, después revisa byte por byte IP identification, ICMP identifier, sequence number, timestamp, checksum y la división entre timestamp y data

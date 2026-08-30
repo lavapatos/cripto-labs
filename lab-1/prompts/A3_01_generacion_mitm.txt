@@ -1,0 +1,9 @@
+necesito otro script chico en python, se debe llamar mitm.py y lo voy a usar como: python3 mitm.py stealth_solo.pcapng
+
+debe recibir la ruta del pcapng como argumento y leerlo con scapy, usa solamente paquetes ipv4 ICMP echo request tipo 8, nunca nunca las respuestas y respeta el orden de captura
+
+los paquetes vienen de mi stealth.py, el carácter está en el primer byte de la zona que wireshark llama data osea en el offset 8 del raw icmp, reconstruye el texto cifrado y muéstralo primero
+
+después prueba las 26 llaves posibles del cifrado césar, del 0 hasta 25 e imprime todas, tiene que estimar cuál parece más probable en español mediante un puntaje explicable, por ejemplo frecuencias de letras y palabras comunes, no puedes comparar contra mi frase original ni dejar la llave 9 escrita a mano
+
+la línea elegida debe salir completa en verde usando color ANSI (aunque es probable que en mi terminal no se vea por mi customización) e incluir tanto la llave como el texto, dame el archivo completo y una explicación corta

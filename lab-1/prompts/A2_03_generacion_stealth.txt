@@ -1,0 +1,11 @@
+ahora hazme stealth.py usando scapy. lo voy a ejecutar así:
+
+sudo python3 stealth.py "larycxpajorj h bnpdarmjm nw anmnb"
+
+el string llega como argumento por terminal y el destino debe quedar fijo en 127.0.0.1, tiene que mandar un echo request por carácter, incluyendo los espacios, y debe pasar un segundo entre un envío y el siguiente.
+
+quiero que conserve la estructura del ping real que analizaste. el bloque raw de icmp debe seguir midiendo 56 bytes, los primeros 8 son la parte que wireshark muestra como timestamp y los otros 48 aparecen como data, el carácter debe reemplazar el primer byte de esa zona data, no agregarse al final, los otros 2 bytes iniciales deben mantener un valor de microsegundos coherente, después deben venir 5 bytes 00 y finalmente el patrón 10, 11, 12... hasta 37
+
+el ICMP identifier debe ser constante durante toda la ejecución, el sequence number debe avanzar ordenadamente y el IP identification debe seguir un comportamiento coherente con mi ping real. conserva también ttl, flags y largo. los checksums de IP e ICMP tienen que calcularse correctamente.
+
+muestra en la terminal qué carácter y número de secuencia se mandó. dame un solo archivo completo, con comentarios solamente donde el manejo de bytes no sea obvio.

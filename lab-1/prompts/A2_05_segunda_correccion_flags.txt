@@ -1,0 +1,5 @@
+no hiciste nada, la corrección no quedó aplicada, revisé el archivo descargado y todavía contiene flags=0, además repetí la captura y los 33 paquetes stealth siguen mostrando ip.flags 0x00, mientras los echo request reales anteriores y posteriores muestran 0x02, don't fragment
+
+corrige de verdad el archivo sin mentir, en el paquete ip debe quedar la bandera DF de scapy, no flags=0, entrégame el código completo directamente en el mensaje, no solamente como enlace de descarga y señala la línea exacta que cambiaste
+
+no modifiques ninguna otra parte porque el payload, timestamp, identifier, sequence, ip identification y checksums ya funcionan

@@ -1,0 +1,7 @@
+hola, considera que ya tengo todo lo necesario en mi equipo para ejecutar lo que te pido, necesito un script chico en python para un laboratorio, el archivo se debe llamar cesar.py y quiero ejecutarlo así:
+
+python3 cesar.py "criptografia y seguridad en redes" 9
+
+el primer argumento tiene que ser el texto y el segundo el corrimiento, debe aplicar cifrado césar a las letras, respetar mayúsculas y minúsculas, dejar iguales los espacios y signos y funcionar también cuando el corrimiento pasa de la z, no uses input() ni dejes la frase o la llave escrita hardcodeada dentro del código.
+
+dame el archivo completo y después explícame corto qué hiciste, no armes clases ni cosas innecesarias ni raras

@@ -1,0 +1,5 @@
+revisé el pcap completo y encontré una diferencia que no habíamos visto, los echo request del ping real anterior y posterior llevan la bandera ipv4 0x02, dont fragment, en cambio los 33 paquetes de stealth.py llevan 0x00 porque el código dejó flags=0 ,necesito que corrijas stealth.py para que el echo request generado use la misma bandera DF del ping real, no cambies el formato del payload, la posición del carácter, el timestamp, los cinco bytes 00, el patrón 10 a 37, el identifier ni la secuencia porque todo eso ya salió bien
+
+
+
+devuélveme el archivo completo y explícame corto por qué flags=0 no coincidía con el tráfico de referencia y cómo se recalculan los checksums después del cambio

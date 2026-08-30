@@ -1,0 +1,5 @@
+ahora estoy trabajando solamente contra 127.0.0.1 en mi propio equipo para un laboratorio, te adjunto una captura de tres echo request hechos con ping normal, el hex del paquete y una imagen de referencia de la guía.
+
+no hagas código, primero dime cómo se comportan el ip identification, el identifier icmp, sequence number, timestamp, ttl, largo y checksum, también necesito que ubiques bien la zona de data con los 3 bytes variables, los 5 bytes 00 y el patrón que va desde 10 hasta 37.
+
+usa los bytes de mi captura como referencia, si algo no se alcanza a ver, dímelo en vez de inventarlo
