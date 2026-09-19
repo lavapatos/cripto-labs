@@ -132,11 +132,13 @@ Abrí el navegador integrado de burp, inicié sesión en DVWA y activé el inter
 de enviar el formulario Brute Force. La consulta obtenida fue un \texttt{GET} con
 los tres parámetros visibles en la URL:
 
+\noindent\begin{minipage}{\textwidth}
 \begin{lstlisting}
 GET /vulnerabilities/brute/?username=admin&password=password&Login=Login HTTP/1.1
 Host: 127.0.0.1:6969
 Cookie: PHPSESSID=qiplsqh502ko6d0qlrc7n3jk23; security=low
 \end{lstlisting}
+\end{minipage}
 
 La cookie conserva la sesión autenticada y el nivel de seguridad bajo. Sin ella, el
 formulario protegido no representa la misma prueba. La figura~\ref{fig:burp-raw} muestra
@@ -410,7 +412,6 @@ pero sí describen el comportamiento observado en este laboratorio.
 
 \begin{table}[htbp]
 \centering
-\caption{Comparación del tráfico observado.}
 \label{tab:trafico}
 \small
 \begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.1cm}|X|X|X|}
@@ -434,6 +435,7 @@ Conexión observada & Dos solicitudes en dos flujos & 53 solicitudes en 38 flujo
 Patrón de trabajo & Una ejecución válida y una inválida & 50 combinaciones y tres repeticiones & 50 consultas previas y 50 intentos \\
 \hline
 \end{tabularx}
+\caption{Comparación del tráfico observado.}
 \end{table}
 
 Las tres herramientas enviaron credenciales dentro de la URL porque el formulario usa
