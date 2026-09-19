@@ -1,0 +1,40 @@
+[+] Starting mysql...
+Starting MariaDB database server: mysqld ..
+[+] Starting apache
+AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.17.0.2. Set the 'ServerName' directive globally to suppress this message
+Starting Apache httpd web server: apache2.
+==> /var/log/apache2/access.log <==
+
+==> /var/log/apache2/error.log <==
+[Fri Sep 18 21:04:29.866053 2026] [mpm_prefork:notice] [pid 298] AH00163: Apache/2.4.25 (Debian) configured -- resuming normal operations
+[Fri Sep 18 21:04:29.866187 2026] [core:notice] [pid 298] AH00094: Command line: '/usr/sbin/apache2'
+
+==> /var/log/apache2/other_vhosts_access.log <==
+
+==> /var/log/apache2/access.log <==
+172.17.0.1 - - [18/Sep/2026:21:10:17 +0000] "GET / HTTP/1.1" 302 337 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:10:17 +0000] "GET /login.php HTTP/1.1" 200 1048 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:10:18 +0000] "GET /dvwa/css/login.css HTTP/1.1" 200 741 "http://127.0.0.1:6969/login.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:10:18 +0000] "GET /dvwa/images/login_logo.png HTTP/1.1" 200 9375 "http://127.0.0.1:6969/login.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:10:18 +0000] "GET /favicon.ico HTTP/1.1" 200 1706 "http://127.0.0.1:6969/login.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "POST /login.php HTTP/1.1" 302 337 "http://127.0.0.1:6969/login.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /setup.php HTTP/1.1" 200 2034 "http://127.0.0.1:6969/login.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /dvwa/images/logo.png HTTP/1.1" 200 5331 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /dvwa/css/main.css HTTP/1.1" 200 1445 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /dvwa/js/dvwaPage.js HTTP/1.1" 200 816 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /dvwa/images/spanner.png HTTP/1.1" 200 749 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /dvwa/js/add_event_listeners.js HTTP/1.1" 200 625 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /dvwa/js/dvwaPage.js HTTP/1.1" 200 816 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:14:46 +0000] "GET /dvwa/js/add_event_listeners.js HTTP/1.1" 200 626 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+127.0.0.1 - - [18/Sep/2026:21:14:54 +0000] "OPTIONS * HTTP/1.0" 200 126 "-" "Apache/2.4.25 (Debian) (internal dummy connection)"
+172.17.0.1 - - [18/Sep/2026:21:17:55 +0000] "GET /setup.php HTTP/1.1" 200 1996 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:18:46 +0000] "-" 408 0 "-" "-"
+172.17.0.1 - - [18/Sep/2026:21:26:30 +0000] "POST /setup.php HTTP/1.1" 302 338 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:26:30 +0000] "GET /setup.php HTTP/1.1" 200 2171 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+
+==> /var/log/apache2/error.log <==
+[Fri Sep 18 21:26:30.327222 2026] [:error] [pid 321] [client 172.17.0.1:50972] PHP Notice:  Constant DVWA_WEB_PAGE_TO_ROOT already defined in /var/www/html/dvwa/includes/DBMS/MySQL.php on line 9, referer: http://127.0.0.1:6969/setup.php
+
+==> /var/log/apache2/access.log <==
+172.17.0.1 - - [18/Sep/2026:21:26:35 +0000] "GET /login.php HTTP/1.1" 200 1050 "http://127.0.0.1:6969/setup.php" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+172.17.0.1 - - [18/Sep/2026:21:27:27 +0000] "-" 408 0 "-" "-"
