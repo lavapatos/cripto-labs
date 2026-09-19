@@ -1,0 +1,493 @@
+\documentclass[letterpaper,12pt]{article}
+\usepackage[paperheight=27.94cm,paperwidth=21.59cm,bindingoffset=0in,left=3cm,right=2.0cm, top=3.5cm,bottom=2.5cm, headheight=20pt, headsep=1.0\baselineskip]{geometry}
+\usepackage{graphicx,lastpage}
+\usepackage{upgreek}
+\usepackage{censor}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{pdfpages}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{rotating}
+\usepackage{multirow}
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xurl}
+
+\setlength{\intextsep}{6pt}
+\setlength{\abovecaptionskip}{4pt}
+\setlength{\belowcaptionskip}{2pt}
+
+\renewcommand{\tablename}{Tabla}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Criptografía y Seguridad en Redes}
+\rhead{Laboratorio 2}
+\cfoot{Página \thepage\ de \pageref{LastPage}}
+
+\graphicspath{{../evidencias/capturas/}}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  showstringspaces=false,
+  keepspaces=true
+}
+
+\newcommand{\labfigure}[4][\textwidth]{%
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=#1,height=0.72\textheight,keepaspectratio]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure}
+}
+
+%
+\begin{document}
+%
+   \title{\Huge{Informe Laboratorio 2}}
+
+   \author{\textbf{Sección 3} \\  \\Edicson Solar Salinas \\ e-mail: edicson.solar@mail.udp.cl}
+          
+   \date{Septiembre de 2026}
+
+   \maketitle
+   
+   \tableofcontents
+ 
+  \newpage
+
+\section{Descripción de actividades}
+
+En este laboratorio trabajé con DVWA dentro de un contenedor local. El servicio quedó
+publicado solamente en \texttt{127.0.0.1:6969}, por lo que todas las solicitudes de burp
+suite, curl e hydra se dirigieron al mismo formulario vulnerable sin salir del equipo. El
+objetivo fue ejecutar fuerza bruta de forma controlada, comprobar accesos válidos e
+inválidos y después comparar el tráfico de las tres herramientas en wireshark.
+
+Las actividades fueron las siguientes.
+
+\begin{itemize}
+  \item Desplegar \href{https://github.com/digininja/DVWA}{DVWA} mediante docker y
+  explicar los parámetros utilizados.
+  \item Interceptar el formulario \texttt{/vulnerabilities/brute/} con burp suite,
+  configurar intruder y obtener al menos dos pares válidos.
+  \item Copiar desde las herramientas de desarrollador un comando curl, ejecutar un
+  acceso válido e inválido y demostrar cinco diferencias.
+  \item Ejecutar hydra sobre el mismo formulario con diccionarios acotados y obtener al
+  menos dos pares válidos.
+  \item Capturar el tráfico de curl, burp e hydra, explicar paquetes representativos,
+  comparar sus características y evaluar si el software puede reconocerse desde la red.
+\end{itemize}
+
+\section{Desarrollo de actividades según criterio de rúbrica}
+
+\subsection{Levantamiento de docker para correr DVWA (dvwa)}
+
+Al comenzar, el servicio de docker estaba inactivo. Lo inicié con
+\texttt{sudo systemctl start docker} y comprobé que la imagen
+\texttt{vulnerables/web-dvwa:latest} ya estaba disponible localmente. Por esa razón usé
+\texttt{--pull=never}, la ejecución no necesitaba descargar ni sustituir la imagen
+existente. El contenedor se creó con este comando:
+
+\begin{lstlisting}
+docker run --pull=never --name dvwa-lab2 --restart=no -d \
+  -p 127.0.0.1:6969:80 vulnerables/web-dvwa:latest
+\end{lstlisting}
+
+\texttt{--name dvwa-lab2} asigna un nombre reconocible, \texttt{--restart=no} evita un
+reinicio automático fuera del laboratorio y \texttt{-d} deja el servicio en segundo plano.
+El identificador devuelto comenzó con \texttt{59d8457229db}. La figura~\ref{fig:docker}
+muestra el contenedor activo y la imagen utilizada.
+
+\labfigure{01_docker_levantamiento.png}
+{Contenedor DVWA levantado con la imagen local del laboratorio.}{fig:docker}
+
+\subsection{Redirección de puertos en docker (dvwa)}
+
+Antes de crear el contenedor comprobé que el puerto 6969 no estuviera escuchando. El
+mapeo \texttt{127.0.0.1:6969:80} publica el puerto 80 interno de DVWA como 6969 en el
+equipo anfitrión. La dirección \texttt{127.0.0.1} es relevante porque limita el acceso a
+loopback y evita exponer esta aplicación vulnerable en otras interfaces de red.
+
+Después del primer acceso creé la base de datos desde Setup DVWA, ingresé con el
+usuario \texttt{admin} y la contraseña \texttt{password}. Mantuve el nivel de seguridad en
+low. En la
+figura~\ref{fig:puerto} se ve el servicio respondiendo en la URL local elegida.
+
+\labfigure{02_dvwa_puerto_local.png}
+{DVWA disponible en \texttt{127.0.0.1:6969} después de la redirección.}{fig:puerto}
+
+\subsection{Obtención de consulta a replicar (burp)}
+
+Abrí el navegador integrado de burp, inicié sesión en DVWA y activé el interceptor antes
+de enviar el formulario Brute Force. La consulta obtenida fue un \texttt{GET} con
+los tres parámetros visibles en la URL:
+
+\begin{lstlisting}
+GET /vulnerabilities/brute/?username=admin&password=password&Login=Login HTTP/1.1
+Host: 127.0.0.1:6969
+Cookie: PHPSESSID=qiplsqh502ko6d0qlrc7n3jk23; security=low
+\end{lstlisting}
+
+La cookie conserva la sesión autenticada y el nivel de seguridad bajo. Sin ella, el
+formulario protegido no representa la misma prueba. La figura~\ref{fig:burp-raw} muestra
+la solicitud completa antes de enviarla a intruder.
+
+\labfigure{06b_burp_consulta_raw.png}
+{Consulta del formulario interceptada en burp suite.}{fig:burp-raw}
+
+\subsection{Identificación de campos a modificar (burp)}
+
+En intruder eliminé las posiciones automáticas. El primer campo variable fue
+\texttt{username} y el segundo fue \texttt{password}. Dejé el resto de la consulta sin
+cambios. Seleccioné cluster bomb porque se necesitaba combinar cada usuario con
+cada contraseña, no avanzar ambas listas de forma paralela.
+
+La figura~\ref{fig:burp-posiciones} muestra las dos posiciones delimitadas por
+\texttt{\S\ldots\S}. Esta selección produce el producto cartesiano de los dos payloads.
+
+\labfigure{07_burp_posiciones_username_password.png}
+{Posiciones de usuario y contraseña configuradas en intruder.}{fig:burp-posiciones}
+
+\subsection{Obtención de diccionarios para el ataque (burp)}
+
+Los usuarios se obtuvieron del índice local \texttt{/hackable/users/}. Los nombres de los
+archivos permitieron formar una lista con \texttt{1337}, \texttt{admin}, \texttt{gordonb},
+\texttt{pablo} y \texttt{smithy}. Para las contraseñas usé solamente las primeras diez
+entradas del archivo rockyou disponible en el equipo.
+
+\begin{center}
+\begin{tabular}{ll}
+\texttt{123456} & \texttt{princess} \\
+\texttt{12345} & \texttt{1234567} \\
+\texttt{123456789} & \texttt{rockyou} \\
+\texttt{password} & \texttt{12345678} \\
+\texttt{iloveyou} & \texttt{abc123}
+\end{tabular}
+\end{center}
+
+No utilicé el archivo rockyou completo. El subconjunto dejaba una prueba reproducible de
+5 usuarios por 10 contraseñas, es decir, 50 combinaciones. Las
+figuras~\ref{fig:usuarios} y~\ref{fig:passwords} muestran la fuente de usuarios y el
+archivo acotado de contraseñas.
+
+\labfigure[0.62\textwidth]{04_diccionario_usuarios_dvwa.png}
+{Usuarios obtenidos desde el índice local de DVWA.}{fig:usuarios}
+
+\labfigure[0.72\textwidth]{05_diccionario_passwords.png}
+{Subconjunto de diez contraseñas derivado de rockyou.}{fig:passwords}
+
+\subsection{Obtención de al menos 2 pares (burp)}
+
+La ejecución en intruder cubrió las 50 combinaciones. Ordené los resultados por length porque
+el estado HTTP no permitía separarlos, las respuestas correctas e incorrectas devolvieron
+\texttt{200}. En el extremo superior aparecieron longitudes distintas a las respuestas
+comunes de 4702 o 4703 bytes. La figura~\ref{fig:burp-longitudes} muestra esos candidatos.
+
+\labfigure{10b_burp_resultados_length_desc.png}
+{Resultados de intruder ordenados de mayor a menor por longitud.}{fig:burp-longitudes}
+
+No consideré un par válido solo por su longitud. Abrí cada respuesta y comprobé el
+mensaje. \texttt{gordonb/abc123} produjo Welcome to the password protected area
+gordonb y una longitud de 4745. \texttt{smithy/password} produjo el mismo tipo de
+bienvenida para \texttt{smithy} y una longitud de 4742. Las
+figuras~\ref{fig:burp-gordon} y~\ref{fig:burp-smithy} muestran ambos resultados.
+
+\labfigure{11_burp_par_gordonb_abc123.png}
+{Primer par confirmado en burp, \texttt{gordonb/abc123}.}{fig:burp-gordon}
+
+\labfigure{12_burp_par_smithy_password.png}
+{Segundo par confirmado en burp, \texttt{smithy/password}.}{fig:burp-smithy}
+
+Como control, \texttt{gordonb/123456} devolvió Username and/or password
+incorrect., sin imagen de usuario y con longitud 4703. La
+figura~\ref{fig:burp-invalida} confirma que un estado \texttt{200} no implica una
+autenticación correcta.
+
+\labfigure{13_burp_respuesta_invalida.png}
+{Respuesta inválida usada para contrastar los pares encontrados.}{fig:burp-invalida}
+
+\subsection{Obtención de código de inspect element (curl)}
+
+Con las herramientas de desarrollador abiertas en la pestaña network, recargué
+la página y filtré por documentos. Esto fue necesario porque al principio la tabla estaba
+vacía y, en el primer intento de selección, había abierto \texttt{admin.jpg} en vez de la
+solicitud del formulario. La comprobación de request URL permitió corregirlo sin
+suponer que ambas filas eran equivalentes.
+
+La solicitud correcta aparece en la figura~\ref{fig:network-form}. Sobre esa fila utilicé
+copy as curl (bash) y guardé el resultado original en
+\texttt{evidencias/raw/curl\_desde\_inspector.sh}. La figura~\ref{fig:curl-codigo} muestra
+el inicio del comando, incluida la URL, la cookie y el \texttt{Referer}.
+
+\labfigure{14b_network_solicitud_formulario.png}
+{Solicitud principal seleccionada en network antes de copiarla como curl.}{fig:network-form}
+
+\labfigure{25b_curl_codigo_inspect.png}
+{Inicio del código curl obtenido desde las herramientas de desarrollador.}{fig:curl-codigo}
+
+\subsection{Utilización de curl por terminal (curl)}
+
+Conservé el comando copiado sin editar y preparé una segunda copia donde cambié solamente
+\texttt{password=password} por \texttt{password=clave\_incorrecta\_lab2}. Las dos
+ejecuciones fueron:
+
+\begin{lstlisting}
+bash evidencias/raw/curl_desde_inspector.sh > evidencias/raw/curl_valido.html
+bash evidencias/raw/curl_invalido.sh > evidencias/raw/curl_invalido.html
+\end{lstlisting}
+
+El primer archivo contiene Welcome to the password protected area admin. El
+segundo contiene Username and/or password incorrect. La
+figura~\ref{fig:curl-ejecuciones} muestra los dos comandos registrados por la terminal. El
+tráfico quedó guardado aparte en \texttt{curl\_valido\_invalido.pcapng}.
+
+\labfigure{26_curl_ejecuciones_terminal.png}
+{Ejecuciones de curl válida e inválida realizadas desde la terminal.}{fig:curl-ejecuciones}
+
+\subsection{Demuestra 5 diferencias (curl)}
+
+La comparación se realizó sobre archivos obtenidos realmente, no sobre páginas
+reconstruidas. Encontré cinco diferencias.
+
+\begin{enumerate}
+  \item En la solicitud válida, el campo \texttt{password} contiene \texttt{password}.
+  En la inválida contiene \path{clave_incorrecta_lab2}.
+  \item El cuerpo válido mide 4413 bytes y el inválido 4375, una diferencia de 38 bytes.
+  \item La respuesta válida muestra una bienvenida para \texttt{admin}; la inválida
+  muestra el mensaje de credenciales incorrectas.
+  \item La válida presenta el resultado dentro de \texttt{<p>}; la inválida usa
+  \texttt{<pre><br />}. 
+  \item La válida incluye \texttt{/hackable/users/admin.jpg}; la inválida no contiene
+  una imagen de usuario.
+\end{enumerate}
+
+La figura~\ref{fig:curl-entrada} demuestra que el parámetro de contraseña fue la única
+modificación en la solicitud. La figura~\ref{fig:curl-tamanos} conserva los tamaños y la
+figura~\ref{fig:curl-diff} muestra la línea HTML distinta.
+
+\labfigure{18_curl_diferencia_solicitud.png}
+{Única modificación entre la solicitud válida y la inválida.}{fig:curl-entrada}
+
+\labfigure{16_curl_tamanos_respuestas.png}
+{Tamaños de los cuerpos guardados para ambas respuestas.}{fig:curl-tamanos}
+
+\labfigure{17_curl_diferencias_contenido.png}
+{Diferencia de contenido entre la respuesta inválida y la válida.}{fig:curl-diff}
+
+En ambos casos el servidor respondió \texttt{200}. Esto no cuenta como diferencia, pero
+sí muestra por qué el resultado debe decidirse con el cuerpo y no solo con el código de
+estado.
+
+\subsection{Instalación y versión a utilizar (hydra)}
+
+La herramienta hydra no estaba instalada al comenzar. El comando \texttt{command -v hydra} no devolvió
+una ruta, mientras que el índice local de Debian sí mostraba el paquete. Lo instalé con:
+
+\begin{lstlisting}
+sudo apt install hydra
+\end{lstlisting}
+
+Después confirmé \texttt{/usr/bin/hydra} y la versión 9.4. La
+figura~\ref{fig:hydra-version} conserva esa verificación.
+
+\labfigure{24_hydra_version.png}
+{Versión de hydra utilizada en el laboratorio.}{fig:hydra-version}
+
+\subsection{Explicación de comando a utilizar (hydra)}
+
+Antes de ejecutar revisé la ayuda local de \texttt{http-get-form}. El módulo exige la ruta,
+los parámetros y una condición para reconocer el fallo. Usé el siguiente comando.
+
+\begin{lstlisting}
+hydra -L evidencias/diccionarios/users_dvwa_5.txt \
+  -P evidencias/diccionarios/passwords_rockyou_10.txt \
+  127.0.0.1 -s 6969 http-get-form \
+  "/vulnerabilities/brute/:username=^USER^&password=^PASS^&Login=Login:H=Cookie\: security=low; PHPSESSID=qiplsqh502ko6d0qlrc7n3jk23:F=Username and/or password incorrect" -V
+\end{lstlisting}
+
+\begin{itemize}
+  \item \texttt{-L} y \texttt{-P} cargan las listas de cinco usuarios y diez
+  contraseñas.
+  \item \texttt{127.0.0.1 -s 6969} fija el único destino y puerto autorizados.
+  \item \texttt{http-get-form} corresponde al método observado en burp y network.
+  \item \verb|^USER^| y \verb|^PASS^| son reemplazados por cada combinación.
+  \item \texttt{H=Cookie} mantiene la sesión y \texttt{security=low}.
+  \item \texttt{F=Username and/or password incorrect} define el texto de una respuesta
+  fallida.
+  \item \texttt{-V} muestra cada intento. No se agregó \texttt{-f}, porque detenerse en
+  el primer hallazgo impediría cumplir la búsqueda de al menos dos pares.
+\end{itemize}
+
+El máximo seguía siendo 50 combinaciones. No se usó el rockyou completo ni se apuntó a
+otra dirección.
+
+\subsection{Obtención de al menos 2 pares (hydra)}
+
+La ejecución de hydra inició a las 23:42:54 y terminó a las 23:42:55. Informó tres pares válidos.
+
+\begin{itemize}
+  \item \texttt{admin/password}
+  \item \texttt{gordonb/abc123}
+  \item \texttt{smithy/password}
+\end{itemize}
+
+La figura~\ref{fig:hydra-resultados} contiene las líneas originales y el resumen
+\texttt{3 valid passwords found}. Los dos últimos pares coinciden con los confirmados en
+burp. Que 50 intentos pudieran completarse sin bloqueo también muestra la ausencia de un
+límite efectivo en esta configuración de DVWA.
+
+\labfigure{19_hydra_resultados.png}
+{Tres pares válidos encontrados por hydra.}{fig:hydra-resultados}
+
+\subsection{Explicación paquete curl (tráfico)}
+
+Seleccioné la trama 978 porque corresponde a la solicitud válida y está enlazada con la
+respuesta 980. En la figura~\ref{fig:paquete-curl} se observa un \texttt{GET} mediante
+HTTP/1.1, desde el puerto origen 51784 hacia el 6969. La trama mide 871 bytes e incluye la
+URL completa, la cookie y varios encabezados del navegador.
+
+Aunque la solicitud fue emitida por curl, el \texttt{User-Agent} indica chromium 150. No
+es un error de wireshark, Copy as curl conservó explícitamente ese encabezado. La
+respuesta 980 tiene estado 200, \texttt{Content-Length: 4413}, no declara compresión y mide
+4751 bytes como trama capturada.
+
+\labfigure{21_curl_paquete_http.png}
+{Detalle HTTP de la solicitud válida emitida mediante curl.}{fig:paquete-curl}
+
+\subsection{Explicación paquete burp (tráfico)}
+
+Para burp seleccioné la trama 402, que contiene el par válido
+\texttt{gordonb/abc123}. La solicitud mide 875 bytes, usa \texttt{GET} mediante HTTP/1.1
+y conserva el mismo User-Agent de chromium. A diferencia de la captura curl, aquí aparecen
+\texttt{Accept-Encoding: gzip, deflate, br} y \texttt{Connection: keep-alive}. La
+figura~\ref{fig:paquete-burp} muestra esos campos y el vínculo con la trama de respuesta
+404.
+
+\labfigure{22_burp_paquete_http.png}
+{Solicitud válida enviada por burp intruder.}{fig:paquete-burp}
+
+La trama de respuesta 404, mostrada en la figura~\ref{fig:respuesta-burp}, tiene estado
+HTTP 200 y usa compresión \texttt{gzip}. Su \texttt{Content-Length} es 1476. Según wireshark,
+ese cuerpo se convierte en 4417 bytes al decodificarlo. Por eso no comparé directamente
+ese valor con la longitud 4745 mostrada por intruder, que corresponde a otra
+representación de la respuesta.
+
+\labfigure{23_burp_respuesta_gzip.png}
+{Respuesta comprimida asociada a la solicitud de burp.}{fig:respuesta-burp}
+
+\subsection{Explicación paquete hydra (tráfico)}
+
+La trama 2338 corresponde al intento con usuario \texttt{admin} y contraseña
+\texttt{password}. Es bastante menor que las anteriores, 267 bytes. La herramienta hydra usa \texttt{GET}
+mediante HTTP/1.0 y envía \texttt{User-Agent: Mozilla/5.0 (Hydra)}. En la cookie aparece
+primero \texttt{security=low} y después \texttt{PHPSESSID}. No aparece
+\texttt{Accept-Encoding}. La trama de respuesta 2394 tiene estado 200, cuerpo de 4413 bytes,
+\texttt{Connection: close} y no declara compresión.
+
+La figura~\ref{fig:paquete-hydra} permite reconocer la herramienta directamente por el
+User-Agent y la versión HTTP. Además, la captura completa contiene 100 solicitudes, 50
+consultas previas a la ruta sin parámetros y 50 intentos con credenciales, cada una en un
+flujo TCP distinto.
+
+\labfigure{20_hydra_paquete_http.png}
+{Detalle HTTP de un intento válido emitido por hydra.}{fig:paquete-hydra}
+
+\subsection{Mención de las diferencias (tráfico)}
+
+La tabla~\ref{tab:trafico} resume campos extraídos de los tres PCAPNG. Los conteos no son
+una prueba de rendimiento aislada, porque cada captura representa una actividad distinta,
+pero sí describen el comportamiento observado en este laboratorio.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparación del tráfico observado.}
+\label{tab:trafico}
+\small
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.1cm}|X|X|X|}
+\hline
+\textbf{Característica} & \textbf{curl} & \textbf{burp} & \textbf{hydra} \\
+\hline
+Trama analizada & 978 & 402 & 2338 \\
+\hline
+Método y versión & GET, HTTP/1.1 & GET, HTTP/1.1 & GET, HTTP/1.0 \\
+\hline
+User-Agent & chromium 150 & chromium 150 & Mozilla/5.0 (Hydra) \\
+\hline
+Tamaño de solicitud & 871 bytes & 875 bytes & 267 bytes \\
+\hline
+Codificación aceptada & No detectada & gzip, deflate, br & No detectada \\
+\hline
+Respuesta & 4413 bytes, sin compresión & 1476 bytes transferidos con gzip & 4413 bytes, sin compresión \\
+\hline
+Conexión observada & Dos solicitudes en dos flujos & 53 solicitudes en 38 flujos & 100 solicitudes en 100 flujos \\
+\hline
+Patrón de trabajo & Una ejecución válida y una inválida & 50 combinaciones y tres repeticiones & 50 consultas previas y 50 intentos \\
+\hline
+\end{tabularx}
+\end{table}
+
+Las tres herramientas enviaron credenciales dentro de la URL porque el formulario usa
+GET. Las dos pruebas solicitadas se realizaron con curl. La herramienta burp mantuvo conexiones y solicitó
+respuestas comprimidas. La herramienta hydra abrió más flujos, generó una consulta previa por cada intento
+y envió solicitudes mucho más pequeñas. En burp se contaron 53 solicitudes con parámetros,
+las 50 combinaciones, una aparición adicional de \texttt{admin/password} y dos apariciones
+adicionales de \texttt{gordonb/iloveyou}. La captura demuestra la repetición, pero no permite
+atribuirle una causa con seguridad.
+
+\subsection{Detección de SW (tráfico)}
+
+La herramienta hydra es la más fácil de detectar en estas capturas. Su User-Agent contiene el
+nombre \texttt{Hydra}, usa HTTP/1.0, cierra la conexión y genera una secuencia de consultas
+previas e intentos en flujos separados. No hace falta inferir su origen solo por el tamaño.
+
+La situación cambia con curl y burp. Ambos paquetes anuncian chromium 150 porque las dos
+herramientas conservaron encabezados del navegador. Por lo tanto, sería incorrecto afirmar
+que el User-Agent permite reconocerlas. Dentro de este experimento se pueden separar por la
+compresión, los encabezados y el patrón de conexiones, burp pidió gzip y reutilizó parte de
+los flujos, mientras el curl guardado no pidió compresión y solo realizó dos solicitudes.
+Esas diferencias describen estas ejecuciones, pero no son una firma universal. Un comando
+Curl puede cambiar sus encabezados y burp también puede modificarlos.
+
+\section*{Conclusiones y comentarios}
+\addcontentsline{toc}{section}{Conclusiones y comentarios}
+
+DVWA quedó aislado en \texttt{127.0.0.1:6969} y las tres herramientas trabajaron contra
+el mismo formulario. En burp se confirmaron \texttt{gordonb/abc123} y
+\texttt{smithy/password}. La ejecución con hydra encontró esos dos pares y también
+\texttt{admin/password} después de probar las 50 combinaciones. En curl, la respuesta
+válida midió 4413 bytes y la inválida 4375. Aun así, ambas devolvieron HTTP 200. Ese fue el
+resultado que más me llamó la atención, porque obliga a revisar el mensaje y la estructura
+del cuerpo en vez de confiar en el estado.
+
+El problema más evidente es que el formulario usa GET. Usuario y contraseña quedan en la
+URL, por lo que aparecen en burp, en el comando curl y en wireshark. También fue posible
+probar todo el diccionario sin bloqueo ni espera. Con solo cinco usuarios y diez
+contraseñas aparecieron tres pares válidos. En una aplicación real, esa combinación de
+credenciales débiles y ausencia de límite de intentos facilita un ataque de diccionario muy
+pequeño.
+
+La herramienta burp fue la que preferí porque ya la había usado en CTF y su vista de
+solicitudes y respuestas me resultó familiar. La herramienta hydra fue mucho más directa para automatizar
+la prueba. La advertencia que muestra al iniciar sobre usos militares fue una de las pocas
+cosas del procedimiento que me causó gracia. En el tráfico también fue la herramienta más
+fácil de reconocer, mientras curl y burp conservaron el mismo User-Agent de chromium.
+
+La parte más difícil fue seguir la actividad. La explicación presencial del profesor fue
+poco clara y el video resultó todavía peor como guía, así que terminé buscando la sintaxis y
+comprobando cada paso por mi cuenta. Al igual que en el laboratorio anterior, no encontré
+un aprendizaje técnico nuevo. La actividad fue mecánica y aburrida. Lo que sí exigió
+cuidado fue no aceptar resultados por apariencia, ordené burp por longitud, comprobé el
+texto de cada respuesta y vinculé cada paquete con su trama de respuesta antes de escribir
+las conclusiones.
+
+\end{document}
