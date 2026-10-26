@@ -32,6 +32,8 @@ parámetros generales y si la comparación coincide.
 
 ## Alcance
 
-Las pruebas se limitaron a la cuenta propia del laboratorio. La solicitud correcta guardada
-en Repeater se envió una sola vez y la prueba terminó al recibir la respuesta de la API; no
-se importó la sesión ni se accedió a archivos.
+Solo usé la cuenta que creé para el laboratorio. En Repeater reenvié una vez la solicitud
+que ya había funcionado y paré cuando recibí la respuesta de la API. No abrí una sesión con
+esa respuesta ni entré a ningún archivo.
+
+De verdad no hice nada ilegal
