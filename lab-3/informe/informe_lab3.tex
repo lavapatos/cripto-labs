@@ -1,0 +1,466 @@
+\documentclass[letterpaper,12pt]{article}
+
+\usepackage[
+  paperheight=27.94cm,
+  paperwidth=21.59cm,
+  bindingoffset=0in,
+  left=3cm,
+  right=2cm,
+  top=3.5cm,
+  bottom=2.5cm,
+  headheight=20pt,
+  headsep=1.0\baselineskip
+]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{lastpage}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+\renewcommand{\tablename}{Tabla}
+\setlength{\intextsep}{7pt}
+\setlength{\abovecaptionskip}{5pt}
+\setlength{\belowcaptionskip}{3pt}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Criptografía y Seguridad en Redes}
+\rhead{Laboratorio 3}
+\cfoot{Página \thepage\ de \pageref{LastPage}}
+
+\graphicspath{{../evidencias/capturas_informe/}}
+
+\definecolor{codebackground}{RGB}{246,248,250}
+\definecolor{codeframe}{RGB}{190,198,207}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebackground},
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  columns=fullflexible,
+  showstringspaces=false,
+  keepspaces=true,
+  tabsize=2
+}
+
+\newcommand{\labfigure}[4][\textwidth]{%
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=#1,height=0.72\textheight,keepaspectratio]{#2}
+    \caption{#3}
+    \label{#4}
+  \end{figure}
+}
+
+\newcommand{\redactionnote}{\textit{Los rectángulos oscuros corresponden a valores sensibles censurados; los nombres de campos y el resultado técnico se conservaron.}}
+
+\begin{document}
+
+\title{\Huge{Informe Laboratorio 3}}
+\author{\textbf{Sección 3} \\[0.5cm]
+Edicson Solar Salinas \\
+e-mail: edicson.solar@mail.udp.cl}
+\date{Octubre de 2026}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Descripción de actividades}
+
+En este laboratorio revisé cómo MEGA procesa una contraseña en el navegador y si el valor
+derivado para el inicio de sesión podía reutilizarse. Elegí MEGA porque publica el código de
+su cliente web y un whitepaper del protocolo. Usé una cuenta creada solo para esta prueba,
+sin archivos personales.
+
+Las actividades fueron las siguientes:
+
+\begin{itemize}
+  \item Identificar el procedimiento criptográfico usado durante el registro y relacionarlo
+  con la solicitud observada en DevTools.
+  \item Identificar el procedimiento de inicio de sesión, incluidas las solicitudes
+  \texttt{us0} y \texttt{us}.
+  \item Reproducir en la consola del navegador la derivación de la credencial de
+  autenticación y compararla con el valor capturado.
+  \item Observar el inicio de sesión con Burp Suite.
+  \item Hacer un único control con contraseña incorrecta y reutilizar una sola vez la
+  credencial correcta mediante Repeater.
+  \item Revisar las políticas oficiales sobre contraseña, cifrado, Recovery Key y seguridad
+  del dispositivo.
+  \item Cerrar el análisis con cuatro conclusiones sobre la seguridad de MEGA.
+\end{itemize}
+
+Guardé localmente los HAR y las capturas originales. No probé cuentas ajenas ni intenté
+acceder a archivos con la respuesta de Repeater. Antes de incorporar las imágenes al informe
+oculté el correo, la sal, \texttt{uh}, las claves y los identificadores de sesión.
+
+\section{Desarrollo de actividades}
+
+\subsection{Identifica el algoritmo hash utilizado para las contraseñas al momento del registro en el sitio web}
+
+Durante el registro guardé el tráfico de DevTools \textit{Network} en un HAR. Al revisarlo
+observé una solicitud \texttt{up} y, después, \texttt{uc2}. Centré el análisis criptográfico
+en \texttt{uc2}, porque allí aparecían \texttt{crv}, \texttt{hak}, \texttt{k} y
+\texttt{v:2}.
+
+El HAR permitió observar los campos enviados, pero no revelaba cómo se calculaban. El
+whitepaper describe el protocolo MEGA v2 y \texttt{js/security.js} muestra cómo lo implementa
+el cliente oficial \cite[págs.~16 a 17]{mega-whitepaper}\cite{mega-security-js}. Durante el
+registro, el cliente genera un
+\textit{Client Random Value} de 128 bits y construye una sal de 256 bits de la forma indicada
+en la ecuación~\ref{eq:salt}. La letra \(P\) completa 200 caracteres junto con la cadena
+\texttt{mega.nz}; después se concatena el valor aleatorio del cliente
+\cite[págs.~16 a 17]{mega-whitepaper}.
+
+\begin{equation}
+\label{eq:salt}
+S = \operatorname{SHA\mbox{-}256}
+\left(\texttt{mega.nz} \parallel P^{200-|\texttt{mega.nz}|} \parallel CRV\right)
+\end{equation}
+
+Con esa sal y la contraseña, el navegador calcula 256 bits mediante:
+
+\begin{equation}
+DK = \operatorname{PBKDF2\mbox{-}HMAC\mbox{-}SHA\mbox{-}512}
+(\textit{password}, S, 100\,000, 256\ \textit{bits}).
+\end{equation}
+
+La salida no se usa como una sola pieza. Los primeros 128 bits forman la
+\textit{Derived Encryption Key}, empleada para cifrar con AES-ECB la Master Key aleatoria
+de 128 bits. Los segundos 128 bits forman la \textit{Derived Authentication Key}. Sobre
+esta última se calcula SHA-256 y se conservan los primeros 128 bits como
+\textit{Hashed Authentication Key} o \texttt{hak}. El servidor recibe el valor aleatorio
+del cliente, la Master Key cifrada y \texttt{hak}; no recibe la contraseña en texto claro
+ni la clave de cifrado derivada.
+
+La figura~\ref{fig:registro-uc2} muestra la solicitud real de registro. La acción
+\texttt{uc2} contiene \texttt{crv}, \texttt{hak}, \texttt{k} y \texttt{v:2}. El campo
+\texttt{k} corresponde a la Master Key cifrada; \texttt{crv} permite volver a calcular la
+sal y \texttt{hak} es el verificador descrito. Antes de incorporar la captura al informe
+oculté el correo, los datos de cuenta y los valores criptográficos sensibles; conservé
+visibles los nombres de los campos, la acción \texttt{uc2} y la versión 2.
+
+\labfigure{A1_01_registro_uc2_informe.png}
+{Solicitud \texttt{uc2} observada durante el registro de la cuenta de laboratorio.}
+{fig:registro-uc2}
+
+\noindent\redactionnote
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{>{\ttfamily}p{1.8cm}X}
+\toprule
+\textnormal{Campo} & \textnormal{Interpretación utilizada en el análisis} \\
+\midrule
+crv & Valor aleatorio del cliente, de 128 bits, utilizado para reconstruir la sal. \\
+k & Master Key de 128 bits cifrada con la primera mitad de la clave derivada. \\
+hak & Primeros 128 bits de SHA-256 aplicado a la mitad de autenticación. \\
+v & Versión del protocolo; la captura muestra el valor 2. \\
+\bottomrule
+\end{tabularx}
+\caption{Correspondencia entre campos del registro y la especificación de MEGA v2.}
+\label{tab:registro-campos}
+\end{table}
+
+\subsection{Identifica el algoritmo hash utilizado para las contraseñas al momento de iniciar sesión}
+
+Después del registro activé la cuenta desde otro navegador, fuera del proxy, para no capturar
+el buzón ni el token de confirmación. Como el navegador de Burp todavía mostraba la pantalla
+de confirmación, eliminé únicamente el almacenamiento local de MEGA y volví a abrir el
+formulario de inicio de sesión.
+
+Antes de enviar el formulario limpié \textit{Network}, activé \textit{Keep log} y mantuve
+\textit{Intercept} desactivado en Burp. Ingresé las credenciales correctas de la cuenta de
+laboratorio y envié el formulario una sola vez. En el HAR exportado identifiqué primero
+\texttt{us0}, cuya respuesta contenía \texttt{s} y \texttt{v:2}, y después \texttt{us}, cuya
+solicitud contenía \texttt{user} y \texttt{uh}.
+
+Relacioné esos campos con el flujo descrito en las páginas 19 y 20 del whitepaper y en
+\texttt{js/security.js}: el cliente decodifica \texttt{s} desde Base64URL y repite
+PBKDF2-HMAC-SHA-512 con 100\,000 iteraciones y 256 bits de salida
+\cite[págs.~19 a 20]{mega-whitepaper}\cite{mega-security-js}. La
+figura~\ref{fig:login-us0} conserva la estructura de la respuesta sin publicar la sal.
+
+\labfigure{A2_02_login_us0_respuesta_informe.png}
+{Respuesta de \texttt{us0}: sal censurada y versión 2 del protocolo.}
+{fig:login-us0}
+
+La primera mitad de la salida vuelve a ser la clave que permite descifrar la Master Key. La
+segunda mitad, de 128 bits, es la clave de autenticación. El cliente la codifica en
+Base64URL y la envía como \texttt{uh} en la acción \texttt{us}, junto con el correo. La
+figura~\ref{fig:login-us} muestra que la solicitud incluyó esos campos y no incluyó la
+contraseña en texto claro.
+
+\labfigure{A2_01_login_us_informe.png}
+{Solicitud \texttt{us} del inicio de sesión; correo y \texttt{uh} censurados.}
+{fig:login-us}
+
+Según el whitepaper, el servidor aplica SHA-256 a la clave de autenticación recibida y compara
+los primeros 128 bits con el \texttt{hak} almacenado \cite[pág.~20]{mega-whitepaper}. En el
+HAR, la respuesta a \texttt{us} devolvió HTTP 200 y los campos \texttt{ach}, \texttt{csid},
+\texttt{k}, \texttt{privk} y \texttt{u}. Esto confirmó que la API aceptó el inicio de sesión
+y que \texttt{uh} corresponde a la clave de autenticación derivada, no al verificador
+almacenado. En la actividad siguiente comprobé esa relación con el valor capturado.
+
+\subsection{Genera el hash de la contraseña desde la consola del navegador}
+
+Para comprobar el cálculo usé un verificador en JavaScript basado en las páginas 19 y 20 del
+whitepaper y en \texttt{js/security.js} \cite[págs.~19 a 20]{mega-whitepaper}
+\cite{mega-security-js}. El verificador reproduce el cálculo de \texttt{uh} con Web Crypto.
+El archivo completo está en \texttt{scripts/A3\_verificar\_pbkdf2\_login.js} dentro del
+repositorio del anexo. Antes de cargar los datos ejecuté \texttt{node -{}-check} para
+descartar errores de sintaxis.
+
+Para comprobar el valor seguí estos pasos:
+
+\begin{enumerate}
+  \item En la captura del inicio de sesión correcto abrí la respuesta de \texttt{us0} y tomé
+  su campo \texttt{s}. Después abrí la solicitud \texttt{us} del mismo flujo y tomé su campo
+  \texttt{uh}. No incorporé ninguno de esos valores al informe.
+  \item Abrí la pestaña \textit{Console} de DevTools en el navegador integrado de Burp y
+  pegué allí el contenido completo del archivo.
+  \item El código mostró un cuadro con tres campos enmascarados. Allí ingresé la contraseña
+  de la cuenta de laboratorio, \texttt{s} y \texttt{uh}.
+  \item Al confirmar, el código decodificó \texttt{s} y \texttt{uh} desde Base64URL,
+  comprobó que tuvieran 32 y 16 bytes, respectivamente, y codificó la contraseña en UTF-8.
+  \item Importó la contraseña como material PBKDF2 y derivó 256 bits con HMAC-SHA-512,
+  la sal capturada y 100\,000 iteraciones.
+  \item Tomó los bytes 16 a 31 de la salida, los codificó en Base64URL y los comparó con el
+  \texttt{uh} capturado. La consola mostró únicamente los parámetros generales y el resultado
+  de la comparación.
+\end{enumerate}
+
+El extracto siguiente contiene la derivación y la comparación de \texttt{uh}. El archivo
+completo del repositorio también incluye el cuadro de entrada, las conversiones, las
+validaciones de longitud y la limpieza de las variables locales.
+
+\clearpage
+\begin{lstlisting}[gobble=8,caption={Extracto literal del código ejecutado para derivar y comparar \texttt{uh}.},label={lst:pbkdf2}]
+        passwordBytes = new TextEncoder().encode(secrets.password);
+        const keyMaterial = await window.crypto.subtle.importKey(
+            'raw',
+            passwordBytes,
+            'PBKDF2',
+            false,
+            ['deriveBits']
+        );
+
+        const derivedBits = await window.crypto.subtle.deriveBits(
+            {
+                name: 'PBKDF2',
+                hash: 'SHA-512',
+                salt: saltBytes,
+                iterations: 100000
+            },
+            keyMaterial,
+            256
+        );
+
+        derivedKeyBytes = new Uint8Array(derivedBits);
+        const calculatedUh = bytesToBase64Url(derivedKeyBytes.subarray(16, 32));
+        const expectedUh = secrets.expectedUh.replace(/=+$/u, '');
+        const matches = calculatedUh === expectedUh;
+\end{lstlisting}
+
+La consola mostró \texttt{COINCIDE}: los segundos 128 bits calculados localmente, después de
+codificarlos en Base64URL, eran iguales al \texttt{uh} capturado. La
+figura~\ref{fig:consola-pbkdf2} registra ese resultado y los parámetros generales en la
+pestaña \textit{Console}. Como el verificador no realiza llamadas de red, esta ejecución no
+produjo otro inicio de sesión ni una solicitud adicional a MEGA.
+
+\labfigure[0.92\textwidth]{A3_02_consola_pbkdf2_contexto_informe.png}
+{Resultado de la reproducción local en la consola del navegador.}
+{fig:consola-pbkdf2}
+
+\clearpage
+\subsection{Intercepta el tráfico login con Burp Suite}
+
+Configuré el navegador para pasar su tráfico por Burp Suite y mantuve \textit{Intercept}
+desactivado mientras observaba \textit{Proxy / HTTP history}. El registro seleccionado en
+la figura~\ref{fig:burp-login} es un \texttt{POST /cs} hacia
+\texttt{g.api.mega.co.nz}. El cuerpo contiene la acción \texttt{us} y los campos
+\texttt{user} y \texttt{uh}; el estado mostrado es HTTP 200.
+
+\labfigure{A4_01_burp_http_history_us_informe.png}
+{Solicitud de inicio de sesión observada en Burp Suite.}
+{fig:burp-login}
+
+\noindent\redactionnote
+
+El navegador de laboratorio confiaba en el certificado local de Burp, por lo que el proxy
+pudo leer el cuerpo. Fuera del proxy, la API utiliza TLS \cite[pág.~15]{mega-whitepaper}.
+Como \texttt{uh} participa directamente en la autenticación, lo oculté en las capturas y
+mantuve los archivos originales fuera del repositorio.
+
+\clearpage
+\subsection{Realizar el intento de login por medio del hash}
+
+Primero realicé un solo intento mediante el formulario con una contraseña deliberadamente
+incorrecta. MEGA mostró \texttt{Invalid email address or password}, como se observa en la
+figura~\ref{fig:login-incorrecto}. El campo de contraseña quedó vacío en la captura y el
+correo fue censurado.
+
+\labfigure[0.70\textwidth]{A5_01_login_incorrecto_rechazado_informe.png}
+{Rechazo visible del único intento con contraseña incorrecta.}
+{fig:login-incorrecto}
+
+El HAR contiene una entrada \texttt{us} con HTTP 402 y cuerpo vacío, seguida 19 segundos
+después por otra entrada \texttt{us} con HTTP 200 y cuerpo \texttt{[-9]}. No atribuí una
+causa a la respuesta vacía. El resultado interpretable \texttt{-9} concuerda con el rechazo
+mostrado por la interfaz y evidencia que el estado HTTP 200, por sí solo, no representa un
+inicio de sesión correcto.
+
+Antes del intento incorrecto había copiado a Repeater la solicitud \texttt{us} del inicio de
+sesión correcto, sin ejecutarla. Después del rechazo la envié una sola vez, sin cambiar
+\texttt{uh}. La API respondió HTTP 200 con un objeto que contenía \texttt{csid},
+\texttt{k}, \texttt{privk}, \texttt{u} y \texttt{ach}. La
+figura~\ref{fig:repeater-correcto} muestra el método, el host, el estado y el inicio del
+objeto; los valores de autenticación, las claves cifradas y los identificadores quedaron
+cubiertos por completo.
+
+\labfigure{A5_02_repeater_uh_correcto_respuesta_informe.png}
+{Reutilización controlada del \texttt{uh} correcto en Repeater y respuesta de la API.}
+{fig:repeater-correcto}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{2.8cm}X}
+\toprule
+\textbf{Control} & \textbf{Resultado interpretable} & \textbf{Qué se comprobó} \\
+\midrule
+Contraseña incorrecta en el formulario & API \texttt{-9} y rechazo visible & La credencial derivada desde la contraseña incorrecta no fue aceptada. \\
+\addlinespace
+\texttt{uh} correcto reutilizado una vez & HTTP 200 y objeto de autenticación & La API aceptó el material correcto reutilizado y devolvió material cifrado de inicio de sesión. \\
+\bottomrule
+\end{tabularx}
+\caption{Comparación del control negativo y la reutilización en Repeater.}
+\label{tab:repeater-comparacion}
+\end{table}
+
+La API aceptó \texttt{uh} y devolvió el objeto de autenticación. Detuve la prueba ahí: no
+importé \texttt{csid}, no abrí una sesión web ni accedí a archivos. Además, \texttt{uh}
+corresponde solo a la mitad de autenticación; para descifrar la Master Key también se
+necesita la primera mitad derivada. El servidor almacena \texttt{hak}, no \texttt{uh}
+\cite[pág.~20]{mega-whitepaper}, por lo que capturar \texttt{uh} en el navegador representa
+un riesgo distinto a obtener la base de datos.
+
+\clearpage
+\subsection{Identifica las políticas de privacidad o seguridad}
+
+Revisé la política de privacidad vigente y los términos generales oficiales, además del
+whitepaper. La política recomienda contraseñas fuertes y únicas, autenticación de dos
+factores, actualizaciones y medidas de protección del dispositivo. También advierte que
+MEGA no solicita la contraseña por correo, que la reutilización de contraseñas aumenta el
+riesgo de toma de cuenta y que, sin una Recovery Key conservada, olvidar la contraseña
+puede implicar perder el acceso a los datos \cite{mega-privacy}.
+
+\labfigure{A6_01_politica_privacidad_password_informe.png}
+{Advertencias de seguridad publicadas en la política de privacidad de MEGA.}
+{fig:privacy-policy}
+
+El numeral 10 de los términos generales, mostrado en la
+figura~\ref{fig:terms-policy}, describe el cifrado controlado por el usuario o UCE. Indica
+que contraseña y Recovery Key deben mantenerse confidenciales, que no deben compartirse
+las claves salvo que se quiera conceder acceso y que MEGA almacena el correo, pero no la
+contraseña \cite{mega-terms}. Esto coincide con el diseño descrito en el whitepaper: el
+servidor conserva un verificador derivado y material cifrado, no la contraseña necesaria
+para descifrar la Master Key.
+
+\labfigure{A6_02_terminos_generales_seguridad_informe.png}
+{Numeral 10 de los términos generales de MEGA.}
+{fig:terms-policy}
+
+El cifrado de extremo a extremo no protege un navegador o equipo comprometido. El malware,
+el acceso físico o el control del navegador pueden capturar los datos antes del cifrado o
+después de la derivación \cite[pág.~14]{mega-whitepaper}.
+
+\clearpage
+\subsection{Conclusiones y comentarios sobre la seguridad de MEGA}
+
+{\small
+\begin{enumerate}
+  \setlength{\itemsep}{3pt}
+  \setlength{\parsep}{0pt}
+  \item En el registro y el inicio de sesión comprobé que MEGA v2 no envía la contraseña en
+  texto claro a la API. El cliente deriva 256 bits con PBKDF2-HMAC-SHA-512 y separa el
+  resultado en una mitad para cifrado y otra para autenticación. Por eso \texttt{uh} no es
+  la contraseña ni un hash simple de ella: son los segundos 128 bits codificados en
+  Base64URL. La diferencia es importante porque una mitad protege la Master Key y la otra
+  autentica la cuenta.
+
+  \item Me llamó la atención que la derivación ocurriera completamente en el navegador y
+  que mi cálculo coincidiera con el \texttt{uh} capturado. Ingresé la sal de \texttt{us0},
+  la contraseña y el valor observado; la consola solo mostró los parámetros y el resultado.
+  Así pude contrastar el whitepaper y el código oficial con el tráfico de mi propia cuenta.
+
+  \item DevTools fue la parte que más me gustó porque pude seguir \texttt{us0} y \texttt{us},
+  revisar sus campos y guardar el HAR. Burp Suite lo usé mucho menos y casi solo para la
+  comprobación en Repeater. La contraseña incorrecta terminó en el código API \texttt{-9},
+  mientras que reutilizar una vez el \texttt{uh} correcto devolvió un objeto de autenticación.
+  Detuve la prueba en esa respuesta y no abrí una sesión web ni accedí a archivos.
+
+  \item La separación entre cifrado y autenticación me parece acertada. Lo que más me preocupó
+  fue comprobar que un \texttt{uh} válido se comporta como una credencial frente a la API.
+  Por eso protegería el navegador y el dispositivo, usaría una contraseña única, activaría
+  2FA y guardaría la Recovery Key por separado.
+\end{enumerate}
+}
+
+\addcontentsline{toc}{section}{Referencias}
+
+{\small
+\begin{thebibliography}{9}
+\setlength{\itemsep}{1pt}
+\setlength{\parsep}{0pt}
+
+\bibitem{mega-whitepaper}
+MEGA Limited.
+\textit{MEGA Security Whitepaper}, tercera edición, junio de 2022.
+\url{https://mega.nz/SecurityWhitepaper.pdf}.
+
+\bibitem{mega-security-js}
+MEGA Limited.
+\textit{Webclient: implementación oficial de seguridad}.
+\url{https://github.com/meganz/webclient/blob/master/js/security.js}.
+Consultado el 25 de octubre de 2026.
+
+\bibitem{mega-privacy}
+MEGA Limited.
+\textit{Privacy and Data Policy}.
+\url{https://mega.io/privacy}.
+Consultado el 25 de octubre de 2026.
+
+\bibitem{mega-terms}
+MEGA Limited.
+\textit{Terms of Service}.
+\url{https://mega.io/terms}.
+Consultado el 25 de octubre de 2026.
+
+\end{thebibliography}
+}
+
+\section*{Anexo}
+\addcontentsline{toc}{section}{Anexo}
+
+\noindent\textbf{Repositorio:}
+\href{https://github.com/lavapatos/cripto-labs/tree/main/lab-3}
+{Laboratorio 3}. Los HAR y las capturas originales contienen material sensible y se
+conservaron fuera del repositorio.
+
+\end{document}

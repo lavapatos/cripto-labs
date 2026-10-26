@@ -6,3 +6,4 @@ Laboratorios de Criptografía y Seguridad en Redes, segundo semestre de 2026.
 
 - [Laboratorio 1](lab-1/): cifrado César y envío de texto dentro de paquetes ICMP echo request.
 - [Laboratorio 2](lab-2/): pruebas controladas de fuerza bruta sobre DVWA y comparación del tráfico de burp, curl e hydra.
+- [Laboratorio 3](lab-3/): análisis del tratamiento de la contraseña en MEGA mediante DevTools, Burp Suite y una comprobación local de `uh`.
