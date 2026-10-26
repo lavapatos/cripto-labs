@@ -36,4 +36,4 @@ Solo usé la cuenta que creé para el laboratorio. En Repeater reenvié una vez 
 que ya había funcionado y paré cuando recibí la respuesta de la API. No abrí una sesión con
 esa respuesta ni entré a ningún archivo.
 
-De verdad no hice nada ilegal
+De verdad no hice nada ilegal... lo juro
