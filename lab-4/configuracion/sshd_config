@@ -1,0 +1,30 @@
+Port 22
+AddressFamily inet
+ListenAddress 0.0.0.0
+
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKeyAlgorithms ssh-ed25519
+KexAlgorithms curve25519-sha256
+Ciphers aes256-ctr
+MACs hmac-sha2-256
+
+PubkeyAuthentication yes
+AuthenticationMethods publickey
+AuthorizedKeysFile .ssh/authorized_keys
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+PermitRootLogin no
+UsePAM no
+AllowUsers lab4
+
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding no
+GatewayPorts no
+PermitTunnel no
+UseDNS no
+PrintMotd no
+LogLevel VERBOSE
+
+Subsystem sftp internal-sftp
